@@ -1,0 +1,22 @@
+FROM alpine:3.15.0
+ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
+ARG ZULU_REPO_VER=1.0.0-2
+RUN apk update && \
+    apk add --virtual --no-cache gnupg software-properties-common locales curl
+    # locale-gen en_US.UTF-8 && \
+    # apk fetch gnupg && \
+    # apk add gnupg && \
+    # gpg 0x219BD9C9 && \
+    # curl -sLO https://cdn.azul.com/zulu/bin/zulu-repo_${ZULU_REPO_VER}_all.deb && dpkg -i zulu-repo_${ZULU_REPO_VER}_all.deb && \
+    # apk -update && \
+    # apk -dist-upgrade && \
+    # mkdir -p /usr/share/man/man1 && \
+    # echo "Package: zulu11-*\nPin: version 11.52+13*\nPin-Priority: 1001" > /etc/apt/preferences && \
+    # apk add --virtual zulu11-jdk=11.0.13-* && \
+    # apk -purge gnupg software-properties-common curl && \
+    # apt autoremove && \
+    # rm -rf /var/lib/apt/lists/* zulu-repo_${ZULU_REPO_VER}_all.deb
+
+
+
+    #software-properties-common locales curl 

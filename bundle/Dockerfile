@@ -1,4 +1,4 @@
-FROM liferay/base
+FROM royalsarkis/liferay_arm64:liferay-base-arm64
 
 ARG LABEL_BUILD_DATE
 ARG LABEL_LIFERAY_VCS_REF
@@ -9,6 +9,7 @@ ARG LABEL_VCS_URL
 ARG LABEL_VERSION
 
 COPY --chown=liferay:liferay liferay /opt/liferay/
+RUN chmod +x /opt/liferay/tomcat/bin/*
 
 RUN ln -fs /opt/liferay/* /home/liferay
 

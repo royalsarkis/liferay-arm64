@@ -1,5 +1,7 @@
 # Running Liferay docker images for Arm64
-Liferay official docker images support only AMD processor, so we have developed a script to build images that supports ARM64 processor.
+Official Liferay Docker images only support AMD processor. So we developed a script to build images supporting the ARM64 processor.
+
+New images will be built the same way official images are built, but they are based on images that support the ARM64 processor.
 
 # Usage
 * Clone this repository

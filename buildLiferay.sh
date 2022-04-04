@@ -1,6 +1,7 @@
 #!/bin/bash
 
-DIR="/tmp/building_env"
+BASE_DIR=$(pwd)
+DIR="$BASE_DIR/build"
 
 function print_menu()  # selected_item, ...menu_items
 {
@@ -135,16 +136,15 @@ function build_liferay {
 	
 	echo "[ INFO ] Downloading liferay bundle $LIFERAY_VERSION"
 	curl -# -L $URL -o $DIR/liferay.tar.gz
-	tar -xf $DIR/liferay.tar.gz -C $DIR/liferay
-	curl -s -o $DIR/liferay/Dockerfile https://raw.githubusercontent.com/royalsarkis/liferay-arm64/master/bundle/Dockerfile
-	mv $DIR/liferay/liferay* $DIR/liferay/liferay
-	cp -rf $DIR/liferay/liferay/tomcat* $DIR/liferay/liferay/tomcat
-	docker build -t liferay-arm64-$LIFERAY_VERSION $DIR/liferay
+	tar -xf $DIR/liferay.tar.gz -C $DIR/
+	rm $DIR/liferay.tar.gz
+	curl -s -o $DIR/Dockerfile https://raw.githubusercontent.com/royalsarkis/liferay-arm64/master/bundle/Dockerfile
+	mv $DIR/liferay* $DIR/liferay
+	cp -rf $DIR/liferay/tomcat* $DIR/liferay/tomcat
+	docker build -t liferay-arm64-$LIFERAY_VERSION $DIR
 
 	check_image
 
-	rm -rf $DIR/liferay
-	rm $DIR/liferay.tar.gz
 }
 
 liferay_version

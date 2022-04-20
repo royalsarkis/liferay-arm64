@@ -2,6 +2,7 @@
 
 BASE_DIR=$(pwd)
 DIR="$BASE_DIR/build"
+CACHE_DIR="$HOME/.liferay/bundles/"
 
 function print_menu()  # selected_item, ...menu_items
 {
@@ -109,42 +110,68 @@ function liferay_version {
 
 	clear
 	echo "[ INFO ] Vous avez choisi Liferay $LIFERAY_VERSION"
-	build_liferay
-}
 
-function check_image()
-{
-	IMAGE=$(docker images | awk '{print $1}'| grep liferay-arm64-$LIFERAY_VERSION)
-	if [ $? -eq 0 ];
-		then
-		docker tag liferay-arm64-$LIFERAY_VERSION:latest liferay-arm64:$LIFERAY_VERSION
-		docker rmi liferay-arm64-$LIFERAY_VERSION:latest
-		echo "Liferay image liferay-arm64:$LIFERAY_VERSION successfully build for arm64 processor"
-		else 
-		echo "Error build the image"
-	fi
-}
-
-function build_liferay {
+	liferay_cache
 	
+}
+
+
+function liferay_cache()
+{
+	if [[ ! -d $CACHE_DIR ]]
+	then mkdir -p $CACHE_DIR
+	fi
+
 	if [[ -d $DIR ]]
 	then rm -rf $DIR
 		mkdir -p $DIR
 	else
 		mkdir -p $DIR
 	fi
-	
-	echo "[ INFO ] Downloading liferay bundle $LIFERAY_VERSION"
-	curl -# -L $URL -o $DIR/liferay.tar.gz
-	tar -xf $DIR/liferay.tar.gz -C $DIR/
-	rm $DIR/liferay.tar.gz
+
+
+	if  (ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION})
+		then
+			CACHED_BUNDLE=$(ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION})
+		else
+			echo "[ INFO ] Downloading liferay bundle $LIFERAY_VERSION"
+			cd $CACHE_DIR && { curl -# -L -O $URL ; cd -; }
+			CACHED_BUNDLE=$(ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION})
+	fi
+	cp $CACHE_DIR/$CACHED_BUNDLE $DIR &>/dev/null
+}
+
+function check_image()
+{
+	if [ $? -eq 0 ];
+		then
+		docker tag liferay-arm64-$LIFERAY_VERSION:latest liferay-arm64:$LIFERAY_VERSION
+		docker rmi liferay-arm64-$LIFERAY_VERSION:latest
+		echo "Liferay image liferay-arm64:$LIFERAY_VERSION successfully build for arm64 processor"
+	else 
+		echo "Error build the image"
+	fi
+	rm -rf $DIR
+}	
+
+function build_liferay {
+	liferay_version
+
+	tar -tzf $DIR/$CACHED_BUNDLE &>/dev/null
+	if [ $? != 0 ]
+	then rm -f $CACHE_DIR/$CACHED_BUNDLE
+		 liferay_cache
+	fi
+
+	tar -xf $DIR/$CACHED_BUNDLE -C $DIR/
+	rm $DIR/$CACHED_BUNDLE
 	curl -s -o $DIR/Dockerfile https://raw.githubusercontent.com/royalsarkis/liferay-arm64/master/bundle/Dockerfile
-	mv $DIR/liferay* $DIR/liferay
-	cp -rf $DIR/liferay/tomcat* $DIR/liferay/tomcat
+	mv $DIR/liferay* $DIR/liferay &>/dev/null
+	cp -rf $DIR/liferay/tomcat* $DIR/liferay/tomcat &>/dev/null
 	docker build -t liferay-arm64-$LIFERAY_VERSION $DIR
 
 	check_image
 
 }
 
-liferay_version
+build_liferay

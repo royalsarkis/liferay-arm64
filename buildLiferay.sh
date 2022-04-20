@@ -138,14 +138,30 @@ function liferay_cache()
 			cd $CACHE_DIR && { curl -# -L -O $URL ; cd -; }
 			CACHED_BUNDLE=$(ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION})
 	fi
-	cp $CACHE_DIR/$CACHED_BUNDLE $DIR &>/dev/null
+	
+	check_corrupted_image
 }
 
-function check_image()
+function check_corrupted_image()
+{
+	tar -tzf $DIR/$CACHED_BUNDLE &>/dev/null
+	
+	if [ $? != "0" ];
+		then #rm -f $CACHE_DIR/$CACHED_BUNDLE
+		 	#liferay_cache
+			 echo "CORRUPTEDDDDDDDDDDDD"
+	else
+	echo $?
+		echo "Not corrupted"
+		cp $CACHE_DIR/$CACHED_BUNDLE $DIR &>/dev/null
+	fi
+}
+
+function check_creation_image()
 {
 	if [ $? -eq 0 ];
 		then
-		docker tag liferay-arm64-$LIFERAY_VERSION:latest liferay-arm64:$LIFERAY_VERSION
+		docker tag liferay-arm64-$LIFERAY_VERSION:latest liferay/portal-arm64:$LIFERAY_VERSION
 		docker rmi liferay-arm64-$LIFERAY_VERSION:latest
 		echo "Liferay image liferay-arm64:$LIFERAY_VERSION successfully build for arm64 processor"
 	else 
@@ -157,20 +173,14 @@ function check_image()
 function build_liferay {
 	liferay_version
 
-	tar -tzf $DIR/$CACHED_BUNDLE &>/dev/null
-	if [ $? != 0 ]
-	then rm -f $CACHE_DIR/$CACHED_BUNDLE
-		 liferay_cache
-	fi
+	# tar -xf $DIR/$CACHED_BUNDLE -C $DIR/
+	# rm $DIR/$CACHED_BUNDLE
+	# curl -s -o $DIR/Dockerfile https://raw.githubusercontent.com/royalsarkis/liferay-arm64/master/bundle/Dockerfile
+	# mv $DIR/liferay* $DIR/liferay &>/dev/null
+	# cp -rf $DIR/liferay/tomcat* $DIR/liferay/tomcat &>/dev/null
+	# docker build -t liferay-arm64-$LIFERAY_VERSION $DIR
 
-	tar -xf $DIR/$CACHED_BUNDLE -C $DIR/
-	rm $DIR/$CACHED_BUNDLE
-	curl -s -o $DIR/Dockerfile https://raw.githubusercontent.com/royalsarkis/liferay-arm64/master/bundle/Dockerfile
-	mv $DIR/liferay* $DIR/liferay &>/dev/null
-	cp -rf $DIR/liferay/tomcat* $DIR/liferay/tomcat &>/dev/null
-	docker build -t liferay-arm64-$LIFERAY_VERSION $DIR
-
-	check_image
+	# check_creation_image
 
 }
 

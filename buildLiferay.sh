@@ -118,7 +118,7 @@ function liferay_version {
 
 function liferay_cache()
 {
-	if [[ ! -d $CACHE_DIR ]]
+	if [ -d "$CACHE_DIR" ];
 	then mkdir -p $CACHE_DIR
 	fi
 
@@ -144,14 +144,12 @@ function liferay_cache()
 
 function check_corrupted_image()
 {
-	tar -tzf $DIR/$CACHED_BUNDLE &>/dev/null
-	
+	tar -tzf $CACHE_DIR/$CACHED_BUNDLE &>/dev/null
+
 	if [ $? != "0" ];
-		then #rm -f $CACHE_DIR/$CACHED_BUNDLE
-		 	#liferay_cache
-			 echo "CORRUPTEDDDDDDDDDDDD"
+		then rm -f $CACHE_DIR/$CACHED_BUNDLE
+		 	liferay_cache
 	else
-	echo $?
 		echo "Not corrupted"
 		cp $CACHE_DIR/$CACHED_BUNDLE $DIR &>/dev/null
 	fi
@@ -173,14 +171,14 @@ function check_creation_image()
 function build_liferay {
 	liferay_version
 
-	# tar -xf $DIR/$CACHED_BUNDLE -C $DIR/
-	# rm $DIR/$CACHED_BUNDLE
-	# curl -s -o $DIR/Dockerfile https://raw.githubusercontent.com/royalsarkis/liferay-arm64/master/bundle/Dockerfile
-	# mv $DIR/liferay* $DIR/liferay &>/dev/null
-	# cp -rf $DIR/liferay/tomcat* $DIR/liferay/tomcat &>/dev/null
-	# docker build -t liferay-arm64-$LIFERAY_VERSION $DIR
+	tar -xf $DIR/$CACHED_BUNDLE -C $DIR/
+	rm $DIR/$CACHED_BUNDLE
+	curl -s -o $DIR/Dockerfile https://raw.githubusercontent.com/royalsarkis/liferay-arm64/master/bundle/Dockerfile
+	mv $DIR/liferay* $DIR/liferay &>/dev/null
+	cp -rf $DIR/liferay/tomcat* $DIR/liferay/tomcat &>/dev/null
+	docker build -t liferay-arm64-$LIFERAY_VERSION $DIR
 
-	# check_creation_image
+	check_creation_image
 
 }
 

@@ -3,6 +3,7 @@
 BASE_DIR=$(pwd)
 DIR="$BASE_DIR/build"
 CACHE_DIR="$HOME/.liferay/bundles/"
+IMAGE_NAME="liferay/portal-arm64"
 
 function print_menu()  # selected_item, ...menu_items
 {
@@ -111,6 +112,7 @@ function liferay_version {
 	clear
 	echo "[ INFO ] Vous avez choisi Liferay $LIFERAY_VERSION"
 
+	check_if_image_exists
 	liferay_cache
 	
 }
@@ -118,51 +120,68 @@ function liferay_version {
 
 function liferay_cache()
 {
-	if [[ ! -d $CACHE_DIR ]]
+	if [ -d "$CACHE_DIR" ];
 	then mkdir -p $CACHE_DIR
 	fi
 
 	if [[ -d $DIR ]]
 	then rm -rf $DIR
-		mkdir -p $DIR
+		mkdir -p $DIR &>/dev/null
 	else
-		mkdir -p $DIR
+		mkdir -p $DIR &>/dev/null
 	fi
 
 
-	if  (ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION})
+	if  (ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION} &>/dev/null)
 		then
-			CACHED_BUNDLE=$(ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION})
+			CACHED_BUNDLE=$(ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION} )
 		else
 			echo "[ INFO ] Downloading liferay bundle $LIFERAY_VERSION"
 			cd $CACHE_DIR && { curl -# -L -O $URL ; cd -; }
-			CACHED_BUNDLE=$(ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION})
+			CACHED_BUNDLE=$(ls $CACHE_DIR | grep liferay-ce-portal-tomcat-${LIFERAY_VERSION} )
 	fi
-	cp $CACHE_DIR/$CACHED_BUNDLE $DIR &>/dev/null
+	
+	check_corrupted_image
 }
 
-function check_image()
+function check_corrupted_image()
+{
+	tar -tzf $CACHE_DIR/$CACHED_BUNDLE &>/dev/null
+
+	if [ $? != "0" ];
+	then rm -f $CACHE_DIR/$CACHED_BUNDLE
+			liferay_cache
+	else
+		cp $CACHE_DIR/$CACHED_BUNDLE $DIR &>/dev/null
+	fi
+}
+
+function check_creation_image()
 {
 	if [ $? -eq 0 ];
 		then
-		docker tag liferay-arm64-$LIFERAY_VERSION:latest liferay-arm64:$LIFERAY_VERSION
+		docker tag liferay-arm64-$LIFERAY_VERSION:latest $IMAGE_NAME:$LIFERAY_VERSION
 		docker rmi liferay-arm64-$LIFERAY_VERSION:latest
-		echo "Liferay image liferay-arm64:$LIFERAY_VERSION successfully build for arm64 processor"
+		echo "[ INFO ] Liferay image liferay-arm64:$LIFERAY_VERSION successfully build for arm64 processor"
+
 	else 
 		echo "Error build the image"
 	fi
 	rm -rf $DIR
 }	
 
+function check_if_image_exists()
+{
+
+	if docker images | awk '{print $1 ":" $2}' | grep $IMAGE_NAME:$LIFERAY_VERSION &>/dev/null ;
+		then echo "[ INFO ] Liferay Image '$IMAGE_NAME:$LIFERAY_VERSION' Already exists on your machine"
+		exit 0
+	fi
+}
+
 function build_liferay {
 	liferay_version
-
-	tar -tzf $DIR/$CACHED_BUNDLE &>/dev/null
-	if [ $? != 0 ]
-	then rm -f $CACHE_DIR/$CACHED_BUNDLE
-		 liferay_cache
-	fi
-
+	echo "[ INFO ] The Liferay Image '$IMAGE_NAME:$LIFERAY_VERSION' is under construction !!!!"
 	tar -xf $DIR/$CACHED_BUNDLE -C $DIR/
 	rm $DIR/$CACHED_BUNDLE
 	curl -s -o $DIR/Dockerfile https://raw.githubusercontent.com/royalsarkis/liferay-arm64/master/bundle/Dockerfile
@@ -170,7 +189,7 @@ function build_liferay {
 	cp -rf $DIR/liferay/tomcat* $DIR/liferay/tomcat &>/dev/null
 	docker build -t liferay-arm64-$LIFERAY_VERSION $DIR
 
-	check_image
+	check_creation_image
 
 }
 
